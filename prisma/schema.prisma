@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Category {
+  COLLAR
+  PULSERA
+  ANILLO
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  price       Decimal
+  imageUrl    String
+  category    Category
+  featured    Boolean  @default(false)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id                 String      @id @default(cuid())
+  customerEmail      String
+  customerPhone      String?
+  shippingAddress    String
+  shippingCity       String
+  shippingPostalCode String
+  shippingState      String
+  shippingCountry    String      @default("Argentina")
+  total              Decimal
+  createdAt          DateTime    @default(now())
+  items              OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Decimal
+}

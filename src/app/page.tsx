@@ -1,65 +1,124 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ProductCard } from "@/components/ProductCard";
+import { getFeaturedProducts } from "@/lib/products";
 
-export default function Home() {
+const site = process.env.NEXT_PUBLIC_SITE_NAME ?? "Mary Mirari";
+
+export default async function Home() {
+  const featured = await getFeaturedProducts(8);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div>
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-br from-cream-dark/40 via-background to-background">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 sm:grid-cols-2 sm:px-6 sm:py-24 lg:items-center">
+          <div className="animate-fade-up order-2 sm:order-1">
+            <p className="font-serif text-lg text-maroon">Bijouterie & accesorios</p>
+            <h1 className="mt-2 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+              Elegancia cotidiana
+            </h1>
+            <p className="mt-4 max-w-md text-muted leading-relaxed">
+              Descubrí piezas delicadas para realzar tu estilo: collares,
+              pulseras y anillos seleccionados con cuidado.
+            </p>
+            <Link
+              href="/catalogo"
+              className="mt-8 inline-flex items-center justify-center rounded-full border-2 border-foreground bg-transparent px-8 py-3 text-sm font-semibold uppercase tracking-widest text-foreground transition hover:bg-foreground hover:text-background"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+              Ver catálogo
+            </Link>
+          </div>
+          <div className="relative order-1 aspect-[4/5] max-h-[420px] animate-fade-up animate-delay-1 sm:order-2 sm:max-h-none sm:min-h-[360px]">
+            <div className="absolute inset-0 rounded-2xl bg-cream-dark/80 shadow-inner" />
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+              src="https://images.unsplash.com/photo-1617032213171-28fe518b4be6?w=900&q=80"
+              alt="Collar y accesorios"
+              fill
+              className="rounded-2xl object-cover mix-blend-multiply opacity-95"
+              sizes="(max-width:640px) 100vw, 50vw"
+              priority
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
         </div>
-      </main>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        <h2 className="text-center font-serif text-2xl font-semibold sm:text-3xl">
+          Promociones y colecciones
+        </h2>
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          <Link
+            href="/catalogo?category=COLLAR"
+            className="group relative overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div className="relative z-10 max-w-[55%]">
+              <p className="text-sm font-medium text-maroon">Novedad</p>
+              <p className="mt-1 font-serif text-2xl font-semibold">
+                Collares delicados
+              </p>
+              <p className="mt-2 text-sm text-muted">
+                Desde $16.900 · Ver selección
+              </p>
+              <span className="mt-4 inline-block text-sm font-semibold underline-offset-4 group-hover:underline">
+                Ver catálogo
+              </span>
+            </div>
+            <div className="pointer-events-none absolute bottom-0 right-0 top-0 w-1/2">
+              <Image
+                src="https://images.unsplash.com/photo-1599643478518-a784e5fb4fb8?w=400&q=80"
+                alt=""
+                fill
+                className="object-cover object-center opacity-90 transition duration-500 group-hover:scale-105"
+                sizes="200px"
+              />
+            </div>
+          </Link>
+          <Link
+            href="/catalogo?category=ANILLO"
+            className="group relative overflow-hidden rounded-2xl border border-border bg-cream-dark/50 p-8 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div className="relative z-10 max-w-[55%]">
+              <p className="text-sm font-medium text-maroon">Destacados</p>
+              <p className="mt-1 font-serif text-2xl font-semibold">
+                Anillos y sets
+              </p>
+              <p className="mt-2 text-sm text-muted">
+                Brillo y diseño · Ver todo
+              </p>
+              <span className="mt-4 inline-block text-sm font-semibold underline-offset-4 group-hover:underline">
+                Ver catálogo
+              </span>
+            </div>
+            <div className="pointer-events-none absolute bottom-0 right-0 top-0 w-1/2">
+              <Image
+                src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&q=80"
+                alt=""
+                fill
+                className="object-cover object-center opacity-90 transition duration-500 group-hover:scale-105"
+                sizes="200px"
+              />
+            </div>
+          </Link>
+        </div>
+      </section>
+
+      <section className="border-t border-border bg-cream-dark/30 py-14">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="text-center">
+            <p className="font-serif text-lg text-maroon">Novedades</p>
+            <h2 className="mt-1 font-serif text-3xl font-semibold">
+              Favoritos de {site}
+            </h2>
+          </div>
+          <ul className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {featured.map((p) => (
+              <li key={p.id}>
+                <ProductCard product={p} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
     </div>
   );
 }

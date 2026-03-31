@@ -32,7 +32,10 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 ## Deploy en Vercel
 
 1. **Base de datos:** esta app usa **PostgreSQL** (no SQLite). Creá una base gratis en [Neon](https://neon.tech) o [Supabase](https://supabase.com), copiá la connection string.
-2. **Variables de entorno** en Vercel (Project → Settings → Environment Variables), mismas claves que en [`.env.example`](./.env.example): al menos `DATABASE_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `OWNER_EMAIL`, `NEXT_PUBLIC_SITE_NAME`, `NEXT_PUBLIC_SITE_URL`.
+2. **Variables de entorno** en Vercel → **Settings** → **Environment Variables**:
+   - Creá una variable llamada exactamente **`DATABASE_URL`** (sensible a mayúsculas) y pegá la URL de Postgres (Neon/Supabase). Marcá al menos **Production** (y **Preview** si usás previews).
+   - Agregá también: `RESEND_API_KEY`, `EMAIL_FROM`, `OWNER_EMAIL`, `NEXT_PUBLIC_SITE_NAME`, `NEXT_PUBLIC_SITE_URL` (ver [`.env.example`](./.env.example)).
+   - **Importante:** después de guardar variables, hacé **Redeploy** del último deployment (Deployments → menú ⋮ → **Redeploy**). Sin redeploy, el runtime a veces sigue sin ver la variable nueva.
 3. **Esquema y datos:** desde tu PC, con la misma `DATABASE_URL` de producción:
    ```bash
    npx prisma db push
@@ -40,5 +43,9 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
    ```
 4. En Vercel: **Framework Preset** = Next.js, **Root Directory** = `.` (raíz del repo), **Build Command** = `npm run build` (por defecto).
 5. Si ves **404 NOT_FOUND** al abrir la URL: revisá el último **Deployment** en Vercel (¿está en verde?). Si falló el **build**, abrí **Build Logs**. Si el build pasó pero la página falla, revisá **Runtime Logs** y que `DATABASE_URL` esté definida en **Production**.
+
+### Error: `PrismaClientInitializationError` / `Environment variable not found: DATABASE_URL`
+
+Significa que en **Vercel** no está definida `DATABASE_URL` para el entorno donde corre el sitio (casi siempre **Production**), o no redeployaste tras agregarla. No se puede poner la contraseña de la base en el código; tiene que estar solo en el panel de Vercel.
 
 Más detalles: [Next.js en Vercel](https://nextjs.org/docs/app/building-your-application/deploying).

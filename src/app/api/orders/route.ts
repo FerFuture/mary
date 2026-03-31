@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { decimalToNumber } from "@/lib/format";
 import { sendOrderEmails } from "@/lib/email";
 
@@ -35,6 +35,17 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Datos inválidos", details: parsed.error.flatten() },
       { status: 400 },
+    );
+  }
+
+  const prisma = getPrisma();
+  if (!prisma) {
+    return NextResponse.json(
+      {
+        error:
+          "Base de datos no configurada. Definí DATABASE_URL para confirmar pedidos.",
+      },
+      { status: 503 },
     );
   }
 

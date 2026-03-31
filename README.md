@@ -44,6 +44,10 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 4. En Vercel: **Framework Preset** = Next.js, **Root Directory** = `.` (raíz del repo), **Build Command** = `npm run build` (por defecto).
 5. Si ves **404 NOT_FOUND** al abrir la URL: revisá el último **Deployment** en Vercel (¿está en verde?). Si falló el **build**, abrí **Build Logs**. Si el build pasó pero la página falla, revisá **Runtime Logs** y que `DATABASE_URL` esté definida en **Production**.
 
+### Windows: `EPERM` al abrir `.next\trace` o al renombrar `query_engine-windows.dll.node`
+
+Suele ser **otro proceso** usando la carpeta (otro `npm run dev`, antivirus, sincronización de **OneDrive** en Escritorio). Cerrá terminales con Node, en el Administrador de tareas finalizá procesos `node`, borrá la carpeta `.next` y volvé a ejecutar `npm run dev`. Si persiste, probá mover el proyecto a una carpeta fuera de Escritorio o excluir la carpeta del antivirus.
+
 ### Error: `PrismaClientInitializationError` / `Environment variable not found: DATABASE_URL`
 
 Significa que en **Vercel** no está definida `DATABASE_URL` para el entorno donde corre el sitio (casi siempre **Production**), o no redeployaste tras agregarla. No se puede poner la contraseña de la base en el código; tiene que estar solo en el panel de Vercel.

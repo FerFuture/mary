@@ -4,6 +4,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { CartDrawer } from "@/components/CartDrawer";
+import { DbConfigBanner } from "@/components/DbConfigBanner";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -42,6 +43,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans text-foreground">
         <SiteHeader />
+        <DbConfigBanner />
         <main className="flex-1">{children}</main>
         <SiteFooter />
         <CartDrawer />

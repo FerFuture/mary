@@ -1,5 +1,5 @@
 import type { Category as DbCategory, Prisma, Product } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { decimalToNumber } from "@/lib/format";
 import type { Category, ProductDTO } from "@/types/product";
 
@@ -27,6 +27,9 @@ export type ProductFilters = {
 };
 
 export async function getProducts(filters: ProductFilters): Promise<ProductDTO[]> {
+  const prisma = getPrisma();
+  if (!prisma) return [];
+
   const where: Prisma.ProductWhereInput = { active: true };
 
   if (filters.category) {
@@ -61,6 +64,9 @@ export async function getProducts(filters: ProductFilters): Promise<ProductDTO[]
 }
 
 export async function getProductBySlug(slug: string): Promise<ProductDTO | null> {
+  const prisma = getPrisma();
+  if (!prisma) return null;
+
   const p = await prisma.product.findFirst({
     where: { slug, active: true },
   });
@@ -68,6 +74,9 @@ export async function getProductBySlug(slug: string): Promise<ProductDTO | null>
 }
 
 export async function getFeaturedProducts(limit = 8): Promise<ProductDTO[]> {
+  const prisma = getPrisma();
+  if (!prisma) return [];
+
   const rows = await prisma.product.findMany({
     where: { active: true, featured: true },
     take: limit,

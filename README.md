@@ -29,8 +29,16 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deploy en Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Base de datos:** esta app usa **PostgreSQL** (no SQLite). Creá una base gratis en [Neon](https://neon.tech) o [Supabase](https://supabase.com), copiá la connection string.
+2. **Variables de entorno** en Vercel (Project → Settings → Environment Variables), mismas claves que en [`.env.example`](./.env.example): al menos `DATABASE_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `OWNER_EMAIL`, `NEXT_PUBLIC_SITE_NAME`, `NEXT_PUBLIC_SITE_URL`.
+3. **Esquema y datos:** desde tu PC, con la misma `DATABASE_URL` de producción:
+   ```bash
+   npx prisma db push
+   npx prisma db seed
+   ```
+4. En Vercel: **Framework Preset** = Next.js, **Root Directory** = `.` (raíz del repo), **Build Command** = `npm run build` (por defecto).
+5. Si ves **404 NOT_FOUND** al abrir la URL: revisá el último **Deployment** en Vercel (¿está en verde?). Si falló el **build**, abrí **Build Logs**. Si el build pasó pero la página falla, revisá **Runtime Logs** y que `DATABASE_URL` esté definida en **Production**.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Más detalles: [Next.js en Vercel](https://nextjs.org/docs/app/building-your-application/deploying).

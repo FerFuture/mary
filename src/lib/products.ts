@@ -1,4 +1,8 @@
 import type { Category as DbCategory, Prisma, Product } from "@prisma/client";
+import {
+  DEMO_PRODUCT_DTOS,
+  filterDemoProducts,
+} from "@/lib/demo-products";
 import { getPrisma } from "@/lib/prisma";
 import { decimalToNumber } from "@/lib/format";
 import type { Category, ProductDTO } from "@/types/product";
@@ -26,9 +30,19 @@ export type ProductFilters = {
   featured?: boolean | null;
 };
 
+/** true si hay al menos un producto activo en Postgres. */
+export async function hasActiveDbProducts(): Promise<boolean> {
+  const prisma = getPrisma();
+  if (!prisma) return false;
+  const n = await prisma.product.count({ where: { active: true } });
+  return n > 0;
+}
+
 export async function getProducts(filters: ProductFilters): Promise<ProductDTO[]> {
   const prisma = getPrisma();
-  if (!prisma) return [];
+  if (!prisma || !(await hasActiveDbProducts())) {
+    return filterDemoProducts(filters);
+  }
 
   const where: Prisma.ProductWhereInput = { active: true };
 
@@ -65,7 +79,9 @@ export async function getProducts(filters: ProductFilters): Promise<ProductDTO[]
 
 export async function getProductBySlug(slug: string): Promise<ProductDTO | null> {
   const prisma = getPrisma();
-  if (!prisma) return null;
+  if (!prisma || !(await hasActiveDbProducts())) {
+    return DEMO_PRODUCT_DTOS.find((p) => p.slug === slug) ?? null;
+  }
 
   const p = await prisma.product.findFirst({
     where: { slug, active: true },
@@ -75,7 +91,9 @@ export async function getProductBySlug(slug: string): Promise<ProductDTO | null>
 
 export async function getFeaturedProducts(limit = 8): Promise<ProductDTO[]> {
   const prisma = getPrisma();
-  if (!prisma) return [];
+  if (!prisma || !(await hasActiveDbProducts())) {
+    return filterDemoProducts({ featured: true }).slice(0, limit);
+  }
 
   const rows = await prisma.product.findMany({
     where: { active: true, featured: true },
@@ -84,4 +102,3 @@ export async function getFeaturedProducts(limit = 8): Promise<ProductDTO[]> {
   });
   return rows.map(toDTO);
 }
-

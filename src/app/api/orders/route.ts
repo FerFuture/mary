@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getDemoProductById } from "@/lib/demo-products";
 import { getPrisma } from "@/lib/prisma";
+import { hasActiveDbProducts } from "@/lib/products";
 import { decimalToNumber } from "@/lib/format";
 import { sendOrderEmails } from "@/lib/email";
 
@@ -39,15 +41,7 @@ export async function POST(request: Request) {
   }
 
   const prisma = getPrisma();
-  if (!prisma) {
-    return NextResponse.json(
-      {
-        error:
-          "Base de datos no configurada. Definí DATABASE_URL para confirmar pedidos.",
-      },
-      { status: 503 },
-    );
-  }
+  const useDemoCheckout = !prisma || !(await hasActiveDbProducts());
 
   const {
     customerEmail,
@@ -69,6 +63,72 @@ export async function POST(request: Request) {
     customerPhone && String(customerPhone).trim()
       ? String(customerPhone).trim()
       : null;
+
+  if (useDemoCheckout) {
+    const resolvedDemo: Array<{
+      productId: string;
+      quantity: number;
+      unitPrice: number;
+      name: string;
+    }> = [];
+
+    for (const line of items) {
+      const p = getDemoProductById(line.productId);
+      if (!p) {
+        return NextResponse.json(
+          { error: "Producto no disponible", productId: line.productId },
+          { status: 400 },
+        );
+      }
+      resolvedDemo.push({
+        productId: p.id,
+        quantity: line.quantity,
+        unitPrice: p.price,
+        name: p.name,
+      });
+    }
+
+    let productsTotal = 0;
+    const emailLines = resolvedDemo.map((l) => {
+      const lineTotal = l.unitPrice * l.quantity;
+      productsTotal += lineTotal;
+      return {
+        name: l.name,
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+        lineTotal,
+      };
+    });
+
+    const orderId = `demo-${Date.now()}`;
+    const shippingPayload = {
+      address: shippingAddress,
+      city: shippingCity,
+      postalCode: shippingPostalCode,
+      state: shippingState,
+      country: shippingCountry,
+    };
+
+    try {
+      await sendOrderEmails({
+        orderId,
+        customerEmail,
+        customerPhone: phone,
+        lines: emailLines,
+        productsTotal,
+        shipping: shippingPayload,
+      });
+    } catch (e) {
+      console.error("Email send failed (pedido demo)", e);
+    }
+
+    return NextResponse.json({
+      orderId,
+      total: productsTotal,
+      lines: emailLines,
+      demo: true,
+    });
+  }
 
   const ids = [...new Set(items.map((i) => i.productId))];
   const products = await prisma.product.findMany({

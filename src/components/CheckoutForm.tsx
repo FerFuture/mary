@@ -63,6 +63,7 @@ export function CheckoutForm() {
         error?: string;
         orderId?: string;
         total?: number;
+        demo?: boolean;
       };
       if (!res.ok) {
         setStatus("error");
@@ -72,9 +73,15 @@ export function CheckoutForm() {
       clear();
       resetForm();
       setStatus("success");
-      setMessage(
-        `Pedido registrado. Te enviamos un resumen a tu correo. Referencia: ${data.orderId?.slice(0, 8).toUpperCase()}…`,
-      );
+      if (data.demo) {
+        setMessage(
+          `Modo demostración: el pedido no se guardó. Ref: ${data.orderId?.slice(0, 14)}…`,
+        );
+      } else {
+        setMessage(
+          `Pedido registrado. Te enviamos un resumen a tu correo. Referencia: ${data.orderId?.slice(0, 8).toUpperCase()}…`,
+        );
+      }
     } catch {
       setStatus("error");
       setMessage("Error de red. Intentá de nuevo más tarde.");

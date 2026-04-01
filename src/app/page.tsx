@@ -14,7 +14,7 @@ export default async function Home() {
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 sm:grid-cols-2 sm:px-6 sm:py-24 lg:items-center">
           <div className="animate-fade-up order-2 sm:order-1">
             <p className="font-serif text-lg text-maroon">Bijouterie & accesorios</p>
-            <h1 className="mt-2 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="mt-2 font-script text-5xl font-normal leading-tight text-maroon sm:text-6xl lg:text-7xl">
               Elegancia cotidiana
             </h1>
             <p className="mt-4 max-w-md text-muted leading-relaxed">
@@ -31,10 +31,10 @@ export default async function Home() {
           <div className="relative order-1 aspect-[4/5] max-h-[420px] animate-fade-up animate-delay-1 sm:order-2 sm:max-h-none sm:min-h-[360px]">
             <div className="absolute inset-0 rounded-2xl bg-cream-dark/80 shadow-inner" />
             <Image
-              src="https://images.unsplash.com/photo-1617032213171-28fe518b4be6?w=900&q=80"
-              alt="Collar y accesorios"
+              src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=900&q=80"
+              alt="Gato"
               fill
-              className="rounded-2xl object-cover mix-blend-multiply opacity-95"
+              className="rounded-2xl object-cover opacity-95"
               sizes="(max-width:640px) 100vw, 50vw"
               priority
             />

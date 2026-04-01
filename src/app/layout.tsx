@@ -1,21 +1,26 @@
 import type { Metadata } from "next";
-import { DM_Sans, Playfair_Display } from "next/font/google";
+import { Cormorant_Garamond, Great_Vibes, Raleway } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { CartDrawer } from "@/components/CartDrawer";
-import { DbConfigBanner } from "@/components/DbConfigBanner";
 
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+const raleway = Raleway({
+  variable: "--font-raleway",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+});
+
+const greatVibes = Great_Vibes({
+  variable: "--font-great-vibes",
+  subsets: ["latin"],
+  weight: "400",
 });
 
 const site = process.env.NEXT_PUBLIC_SITE_NAME ?? "Mary Mirari";
@@ -39,11 +44,10 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${dmSans.variable} ${playfair.variable} h-full antialiased`}
+      className={`${raleway.variable} ${cormorant.variable} ${greatVibes.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans text-foreground">
         <SiteHeader />
-        <DbConfigBanner />
         <main className="flex-1">{children}</main>
         <SiteFooter />
         <CartDrawer />

@@ -22,8 +22,9 @@ const config: Config = {
         ink: "#1c1917",
       },
       fontFamily: {
-        sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
-        serif: ["var(--font-playfair)", "Georgia", "serif"],
+        sans: ["var(--font-raleway)", "system-ui", "sans-serif"],
+        serif: ["var(--font-cormorant)", "Georgia", "serif"],
+        script: ["var(--font-great-vibes)", "cursive"],
       },
     },
   },

@@ -66,7 +66,7 @@ const bodySchema = z.object({
     .nullable(),
   shippingAddress: z.string().trim().min(3).max(500),
   shippingCity: z.string().trim().min(2).max(120),
-  shippingPostalCode: z.string().trim().regex(/^\\d{2,8}$/u),
+  shippingPostalCode: z.string().trim().regex(/^\d{2,8}$/u),
   // Validación razonable para evitar texto totalmente inválido.
   // Sigue siendo "texto libre" (opción 2), pero sin caracteres raros.
   shippingState: z
@@ -78,7 +78,7 @@ const bodySchema = z.object({
   shippingCountry: z
     .string()
     .trim()
-    .regex(/^[\\p{L}\\s.'-]{2,80}$/u)
+    .regex(/^[\p{L}\s.'-]{2,80}$/u)
     .optional()
     .nullable(),
   // Anti-bots: el cliente legítimo no lo toca; los bots suelen rellenarlo.

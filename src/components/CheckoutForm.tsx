@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useCartStore, cartSubtotal } from "@/store/cart";
 import { formatCurrency } from "@/lib/format";
+import { ARGENTINA_PROVINCES } from "@/lib/argentina-provinces";
 
 const initialShipping = {
   address: "",
@@ -23,10 +24,13 @@ export function CheckoutForm() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [shipping, setShipping] = useState(initialShipping);
+  const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [message, setMessage] = useState("");
+
+  const [provinceOpen, setProvinceOpen] = useState(false);
 
   const subtotal = cartSubtotal(items);
 
@@ -34,13 +38,31 @@ export function CheckoutForm() {
     setEmail("");
     setPhone("");
     setShipping(initialShipping);
+    setHoneypot("");
+    setProvinceOpen(false);
   }
+
+  const provinceQuery = shipping.state.trim().toLowerCase();
+  const provinceSuggestions =
+    provinceQuery.length > 0
+      ? ARGENTINA_PROVINCES.filter((p) =>
+          p.toLowerCase().startsWith(provinceQuery),
+        ).slice(0, 8)
+      : [];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (items.length === 0) return;
     setStatus("loading");
     setMessage("");
+
+    // Idempotencia simple para evitar duplicados si el usuario reintenta.
+    // Se envía al backend como clave.
+    const requestId =
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `req_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -53,6 +75,9 @@ export function CheckoutForm() {
           shippingPostalCode: shipping.postalCode.trim(),
           shippingState: shipping.state.trim(),
           shippingCountry: shipping.country.trim() || null,
+          // Honeypot anti-bots (debe quedar vacío)
+          honeypot: honeypot.trim(),
+          idempotencyKey: requestId,
           items: items.map((i) => ({
             productId: i.productId,
             quantity: i.quantity,
@@ -195,6 +220,17 @@ export function CheckoutForm() {
             coordinamos por WhatsApp según tu zona. Sin pago online.
           </p>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            {/* Honeypot anti-bots: bots suelen rellenarlo aunque esté oculto.
+                Debe quedar vacío, el backend lo valida. */}
+            <input
+              type="text"
+              name="company"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              style={{ display: "none" }}
+            />
             <div>
               <label
                 htmlFor="checkout-email"
@@ -290,16 +326,45 @@ export function CheckoutForm() {
                     <label htmlFor="ship-state" className="text-xs text-muted">
                       Provincia / estado *
                     </label>
-                    <input
-                      id="ship-state"
-                      required
-                      autoComplete="address-level1"
-                      value={shipping.state}
-                      onChange={(e) =>
-                        setShipping((s) => ({ ...s, state: e.target.value }))
-                      }
-                      className={inputClass}
-                    />
+                    <div className="relative">
+                      <input
+                        id="ship-state"
+                        required
+                        autoComplete="address-level1"
+                        value={shipping.state}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setShipping((s) => ({ ...s, state: next }));
+                          setProvinceOpen(true);
+                        }}
+                        onFocus={() => setProvinceOpen(true)}
+                        onBlur={() => {
+                          // Un pequeño delay para permitir que el click en una opción funcione.
+                          window.setTimeout(() => setProvinceOpen(false), 120);
+                        }}
+                        className={inputClass}
+                      />
+                      {provinceOpen && provinceSuggestions.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-background shadow-lg">
+                          <ul className="max-h-56 overflow-auto py-1">
+                            {provinceSuggestions.map((p) => (
+                              <li key={p}>
+                                <button
+                                  type="button"
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-cream-dark/60"
+                                  onClick={() => {
+                                    setShipping((s) => ({ ...s, state: p }));
+                                    setProvinceOpen(false);
+                                  }}
+                                >
+                                  {p}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label htmlFor="ship-country" className="text-xs text-muted">
@@ -309,6 +374,7 @@ export function CheckoutForm() {
                       id="ship-country"
                       autoComplete="country-name"
                       value={shipping.country}
+                      disabled
                       onChange={(e) =>
                         setShipping((s) => ({ ...s, country: e.target.value }))
                       }

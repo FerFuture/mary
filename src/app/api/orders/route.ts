@@ -1,10 +1,47 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { getDemoProductById } from "@/lib/demo-products";
 import { getPrisma } from "@/lib/prisma";
 import { hasActiveDbProducts } from "@/lib/products";
 import { decimalToNumber } from "@/lib/format";
 import { sendOrderEmails } from "@/lib/email";
+
+// Rate limiting simple (en memoria) para frenar spam.
+// Nota: en serverless puede no persistir entre instancias, pero igualmente reduce abuso.
+const ORDER_RATE_LIMIT = {
+  windowMs: 60_000, // 1 minuto
+  maxRequestsPerWindow: 8,
+};
+
+const rateBuckets = new Map<string, number[]>(); // ip -> timestamps
+
+function getClientIp(request: Request): string {
+  const xff = request.headers.get("x-forwarded-for");
+  const xRealIp = request.headers.get("x-real-ip");
+  const ip =
+    (xff?.split(",")[0]?.trim() ?? "") ||
+    (xRealIp?.trim() ?? "") ||
+    "unknown";
+  return ip;
+}
+
+function isRateLimited(ip: string, nowMs: number): boolean {
+  const bucket = rateBuckets.get(ip) ?? [];
+  const cutoff = nowMs - ORDER_RATE_LIMIT.windowMs;
+  const filtered = bucket.filter((t) => t >= cutoff);
+  if (filtered.length >= ORDER_RATE_LIMIT.maxRequestsPerWindow) {
+    // Guardamos el bucket “limpiado” igual para que no crezca infinito.
+    rateBuckets.set(ip, filtered);
+    return true;
+  }
+  filtered.push(nowMs);
+  rateBuckets.set(ip, filtered);
+
+  // Limpieza simple para buckets vacíos.
+  if (filtered.length === 0) rateBuckets.delete(ip);
+  return false;
+}
 
 function aggregateItemQuantities(
   lines: { productId: string; quantity: number }[],
@@ -21,20 +58,42 @@ function aggregateItemQuantities(
 
 const bodySchema = z.object({
   customerEmail: z.string().email(),
-  customerPhone: z.string().optional().nullable(),
+  customerPhone: z
+    .string()
+    .trim()
+    .regex(/^[0-9+()\\-\\s]{6,25}$/u)
+    .optional()
+    .nullable(),
   shippingAddress: z.string().trim().min(3).max(500),
   shippingCity: z.string().trim().min(2).max(120),
-  shippingPostalCode: z.string().trim().min(2).max(20),
-  shippingState: z.string().trim().min(2).max(120),
-  shippingCountry: z.string().trim().max(80).optional().nullable(),
+  shippingPostalCode: z.string().trim().regex(/^\\d{2,8}$/u),
+  // Validación razonable para evitar texto totalmente inválido.
+  // Sigue siendo "texto libre" (opción 2), pero sin caracteres raros.
+  shippingState: z
+    .string()
+    .trim()
+    .min(2)
+    .max(120)
+    .regex(/^[\p{L}\s.,'-]+$/u),
+  shippingCountry: z
+    .string()
+    .trim()
+    .regex(/^[\\p{L}\\s.'-]{2,80}$/u)
+    .optional()
+    .nullable(),
+  // Anti-bots: el cliente legítimo no lo toca; los bots suelen rellenarlo.
+  honeypot: z.string().optional().nullable(),
+  // Idempotencia (evita duplicar órdenes si el cliente reintenta).
+  idempotencyKey: z.string().min(8).max(200).optional(),
   items: z
     .array(
       z.object({
-        productId: z.string().min(1),
-        quantity: z.number().int().positive(),
+        productId: z.string().min(1).max(120),
+        quantity: z.number().int().positive().max(50),
       }),
     )
-    .min(1),
+    .min(1)
+    .max(10),
 });
 
 export async function POST(request: Request) {
@@ -53,6 +112,15 @@ export async function POST(request: Request) {
     );
   }
 
+  const ip = getClientIp(request);
+  const nowMs = Date.now();
+  if (isRateLimited(ip, nowMs)) {
+    return NextResponse.json(
+      { error: "Demasiados pedidos. Esperá un momento." },
+      { status: 429 },
+    );
+  }
+
   const prisma = getPrisma();
   const useDemoCheckout = !prisma || !(await hasActiveDbProducts());
 
@@ -63,14 +131,21 @@ export async function POST(request: Request) {
     shippingCity,
     shippingPostalCode,
     shippingState,
-    shippingCountry: countryRaw,
+    shippingCountry: _countryRaw,
+    honeypot,
+    idempotencyKey,
     items,
   } = parsed.data;
 
-  const shippingCountry =
-    countryRaw && countryRaw.trim().length > 0
-      ? countryRaw.trim()
-      : "Argentina";
+  if (honeypot && String(honeypot).trim().length > 0) {
+    return NextResponse.json(
+      { error: "Solicitud inválida" },
+      { status: 400 },
+    );
+  }
+
+  // El backend fuerza el país porque por ahora tu tienda envía a Argentina.
+  const shippingCountry = "Argentina";
 
   const phone =
     customerPhone && String(customerPhone).trim()
@@ -192,6 +267,46 @@ export async function POST(request: Request) {
     }
   }
 
+  // Idempotencia: si el cliente reintenta con la misma clave,
+  // evitamos duplicar el pedido y hacer decrementos de stock dos veces.
+  const deterministicOrderId = idempotencyKey
+    ? `ord_${idempotencyKey}`
+    : null;
+
+  if (deterministicOrderId) {
+    const existing = await prisma.order.findUnique({
+      where: { id: deterministicOrderId },
+      include: { items: true },
+    });
+
+    if (existing) {
+      const existingProductIds = [
+        ...new Set(existing.items.map((it) => it.productId)),
+      ];
+      const existingProducts = await prisma.product.findMany({
+        where: { id: { in: existingProductIds } },
+        select: { id: true, name: true },
+      });
+      const nameById = new Map(existingProducts.map((p) => [p.id, p.name]));
+
+      const lines = existing.items.map((it) => {
+        const unit = decimalToNumber(it.unitPrice);
+        return {
+          name: nameById.get(it.productId) ?? "Producto",
+          quantity: it.quantity,
+          unitPrice: unit,
+          lineTotal: unit * it.quantity,
+        };
+      });
+
+      return NextResponse.json({
+        orderId: existing.id,
+        total: decimalToNumber(existing.total),
+        lines,
+      });
+    }
+  }
+
   let productsTotal = 0;
   const resolvedLines: Array<{
     productId: string;
@@ -239,6 +354,7 @@ export async function POST(request: Request) {
 
       const o = await tx.order.create({
         data: {
+          ...(deterministicOrderId ? { id: deterministicOrderId } : {}),
           customerEmail,
           customerPhone: phone,
           shippingAddress,
@@ -265,6 +381,44 @@ export async function POST(request: Request) {
   } catch (e) {
     console.error("Order transaction failed", e);
     const msg = e instanceof Error ? e.message : "";
+    const isUniqueIdConflict =
+      deterministicOrderId &&
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === "P2002";
+
+    if (isUniqueIdConflict && deterministicOrderId) {
+      const existing = await prisma.order.findUnique({
+        where: { id: deterministicOrderId },
+        include: { items: true },
+      });
+
+      if (existing) {
+        const existingProductIds = [
+          ...new Set(existing.items.map((it) => it.productId)),
+        ];
+        const existingProducts = await prisma.product.findMany({
+          where: { id: { in: existingProductIds } },
+          select: { id: true, name: true },
+        });
+        const nameById = new Map(existingProducts.map((p) => [p.id, p.name]));
+
+        const lines = existing.items.map((it) => {
+          const unit = decimalToNumber(it.unitPrice);
+          return {
+            name: nameById.get(it.productId) ?? "Producto",
+            quantity: it.quantity,
+            unitPrice: unit,
+            lineTotal: unit * it.quantity,
+          };
+        });
+
+        return NextResponse.json({
+          orderId: existing.id,
+          total: decimalToNumber(existing.total),
+          lines,
+        });
+      }
+    }
     if (msg.startsWith("STOCK_CONFLICT:")) {
       return NextResponse.json(
         {

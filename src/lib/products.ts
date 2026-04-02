@@ -19,6 +19,7 @@ function toDTO(p: Product): ProductDTO {
     imageUrl: p.imageUrl,
     category: p.category as Category,
     featured: p.featured,
+    maxOrderQuantity: p.stock,
   };
 }
 
@@ -44,7 +45,7 @@ export async function getProducts(filters: ProductFilters): Promise<ProductDTO[]
     return filterDemoProducts(filters);
   }
 
-  const where: Prisma.ProductWhereInput = { active: true };
+  const where: Prisma.ProductWhereInput = { active: true, stock: { gt: 0 } };
 
   if (filters.category) {
     where.category = filters.category;
@@ -65,8 +66,9 @@ export async function getProducts(filters: ProductFilters): Promise<ProductDTO[]
   if (filters.q && filters.q.trim()) {
     const term = filters.q.trim();
     where.OR = [
-      { name: { contains: term } },
-      { description: { contains: term } },
+      { name: { contains: term, mode: "insensitive" } },
+      { description: { contains: term, mode: "insensitive" } },
+      { slug: { contains: term, mode: "insensitive" } },
     ];
   }
 
@@ -96,7 +98,7 @@ export async function getFeaturedProducts(limit = 8): Promise<ProductDTO[]> {
   }
 
   const rows = await prisma.product.findMany({
-    where: { active: true, featured: true },
+    where: { active: true, featured: true, stock: { gt: 0 } },
     take: limit,
     orderBy: { name: "asc" },
   });

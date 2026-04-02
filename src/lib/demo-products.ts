@@ -1,5 +1,7 @@
 import type { Category, ProductDTO } from "@/types/product";
 
+export const DEMO_DEFAULT_STOCK = 20;
+
 export type DemoProductSeed = {
   slug: string;
   name: string;
@@ -8,6 +10,8 @@ export type DemoProductSeed = {
   imageUrl: string;
   category: Category;
   featured: boolean;
+  /** Stock inicial en seed / modo demo (por defecto 20). */
+  stock?: number;
 };
 
 export const DEMO_PRODUCT_SEEDS: DemoProductSeed[] = [
@@ -205,6 +209,7 @@ export const DEMO_PRODUCT_DTOS: ProductDTO[] = DEMO_PRODUCT_SEEDS.map((p) => ({
   imageUrl: p.imageUrl,
   category: p.category,
   featured: p.featured,
+  maxOrderQuantity: p.stock ?? DEMO_DEFAULT_STOCK,
 }));
 
 const demoById = new Map(DEMO_PRODUCT_DTOS.map((p) => [p.id, p] as const));
@@ -239,9 +244,12 @@ export function filterDemoProducts(filters: {
     list = list.filter(
       (p) =>
         p.name.toLowerCase().includes(term) ||
-        p.description.toLowerCase().includes(term),
+        p.description.toLowerCase().includes(term) ||
+        p.slug.toLowerCase().includes(term),
     );
   }
+
+  list = list.filter((p) => p.maxOrderQuantity > 0);
 
   list.sort((a, b) => {
     if (a.featured !== b.featured) return a.featured ? -1 : 1;

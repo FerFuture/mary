@@ -24,6 +24,7 @@ model Product {
   category    Category
   featured    Boolean  @default(false)
   active      Boolean  @default(true)
+  stock       Int      @default(20)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   orderItems  OrderItem[]

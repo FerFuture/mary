@@ -73,15 +73,15 @@ export function CheckoutForm() {
       clear();
       resetForm();
       setStatus("success");
-      if (data.demo) {
-        setMessage(
-          `Modo demostración: el pedido no se guardó. Ref: ${data.orderId?.slice(0, 14)}…`,
-        );
-      } else {
-        setMessage(
-          `Pedido registrado. Te enviamos un resumen a tu correo. Referencia: ${data.orderId?.slice(0, 8).toUpperCase()}…`,
-        );
-      }
+      const id = data.orderId ?? "";
+      const shortRef = id.startsWith("demo-")
+        ? id.slice(5, 13).toUpperCase()
+        : id.slice(0, 8).toUpperCase();
+      setMessage(
+        shortRef
+          ? `Te enviamos un resumen de tu pedido a tu correo. Te vamos a contactar por WhatsApp para coordinar el pago y el envío. Pedido #${shortRef}.`
+          : "Te enviamos un resumen de tu pedido a tu correo. Te vamos a contactar por WhatsApp para coordinar el pago y el envío.",
+      );
     } catch {
       setStatus("error");
       setMessage("Error de red. Intentá de nuevo más tarde.");

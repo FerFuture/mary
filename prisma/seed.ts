@@ -18,6 +18,7 @@ async function main() {
         imageUrl: p.imageUrl,
         category: p.category as Category,
         featured: p.featured,
+        stock: p.stock ?? 20,
       },
     });
   }

@@ -6,6 +6,19 @@ import { hasActiveDbProducts } from "@/lib/products";
 import { decimalToNumber } from "@/lib/format";
 import { sendOrderEmails } from "@/lib/email";
 
+function aggregateItemQuantities(
+  lines: { productId: string; quantity: number }[],
+): { productId: string; quantity: number }[] {
+  const m = new Map<string, number>();
+  for (const line of lines) {
+    m.set(line.productId, (m.get(line.productId) ?? 0) + line.quantity);
+  }
+  return [...m.entries()].map(([productId, quantity]) => ({
+    productId,
+    quantity,
+  }));
+}
+
 const bodySchema = z.object({
   customerEmail: z.string().email(),
   customerPhone: z.string().optional().nullable(),
@@ -65,6 +78,26 @@ export async function POST(request: Request) {
       : null;
 
   if (useDemoCheckout) {
+    const aggregatedDemo = aggregateItemQuantities(items);
+    for (const { productId, quantity } of aggregatedDemo) {
+      const p = getDemoProductById(productId);
+      if (!p) {
+        return NextResponse.json(
+          { error: "Producto no disponible", productId },
+          { status: 400 },
+        );
+      }
+      if (quantity > p.maxOrderQuantity) {
+        return NextResponse.json(
+          {
+            error: "La cantidad pedida no está disponible para este producto",
+            productId,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     const resolvedDemo: Array<{
       productId: string;
       quantity: number;
@@ -145,6 +178,20 @@ export async function POST(request: Request) {
     }
   }
 
+  const aggregatedDb = aggregateItemQuantities(items);
+  for (const { productId, quantity } of aggregatedDb) {
+    const p = byId.get(productId)!;
+    if (quantity > p.stock) {
+      return NextResponse.json(
+        {
+          error: "La cantidad pedida no está disponible para este producto",
+          productId,
+        },
+        { status: 400 },
+      );
+    }
+  }
+
   let productsTotal = 0;
   const resolvedLines: Array<{
     productId: string;
@@ -176,6 +223,20 @@ export async function POST(request: Request) {
   let orderId: string;
   try {
     const order = await prisma.$transaction(async (tx) => {
+      for (const { productId, quantity } of aggregatedDb) {
+        const updated = await tx.product.updateMany({
+          where: {
+            id: productId,
+            active: true,
+            stock: { gte: quantity },
+          },
+          data: { stock: { decrement: quantity } },
+        });
+        if (updated.count !== 1) {
+          throw new Error(`STOCK_CONFLICT:${productId}`);
+        }
+      }
+
       const o = await tx.order.create({
         data: {
           customerEmail,
@@ -203,6 +264,16 @@ export async function POST(request: Request) {
     orderId = order.id;
   } catch (e) {
     console.error("Order transaction failed", e);
+    const msg = e instanceof Error ? e.message : "";
+    if (msg.startsWith("STOCK_CONFLICT:")) {
+      return NextResponse.json(
+        {
+          error:
+            "No hay suficientes unidades disponibles. Actualizá el carrito e intentá de nuevo.",
+        },
+        { status: 409 },
+      );
+    }
     return NextResponse.json(
       { error: "No se pudo guardar el pedido" },
       { status: 500 },

@@ -41,6 +41,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
    npx prisma db push
    npx prisma db seed
    ```
+   **Supabase en Windows:** la conexión **directa** (`db.<ref>.supabase.co:5432`) usa **IPv6**; en muchas redes domésticas Prisma no llega (`P1001`). Para `db push` / `seed` en tu PC, en el dashboard de Supabase abrí **Connect** → **Session pooler**, copiá esa URI (usuario tipo `postgres.<ref>` y host `aws-0-…pooler.supabase.com`) y usala como `DATABASE_URL` en `.env.local` solo para esos comandos. En **Vercel** suele funcionar bien la URI **directa** o la misma que indique Supabase para serverless. Si ves `FATAL: Tenant or user not found`, la URI del pooler no coincide con la región del proyecto o la **contraseña** no es la actual (podés resetearla en **Database settings**).
 4. En Vercel: **Framework Preset** = Next.js, **Root Directory** = `.` (raíz del repo), **Build Command** = `npm run build` (por defecto).
 5. Si ves **404 NOT_FOUND** al abrir la URL: revisá el último **Deployment** en Vercel (¿está en verde?). Si falló el **build**, abrí **Build Logs**. Si el build pasó pero la página falla, revisá **Runtime Logs** y que `DATABASE_URL` esté definida en **Production**.
 

@@ -40,6 +40,7 @@ export function ProductCard({ product }: Props) {
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
+            disabled={product.maxOrderQuantity < 1}
             onClick={() =>
               addItem({
                 productId: product.id,
@@ -48,11 +49,12 @@ export function ProductCard({ product }: Props) {
                 imageUrl: product.imageUrl,
                 unitPrice: product.price,
                 quantity: 1,
+                maxQuantity: product.maxOrderQuantity,
               })
             }
-            className="flex-1 min-w-[120px] rounded-full bg-maroon px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-maroon-hover focus-visible:outline focus-visible:ring-2 focus-visible:ring-maroon/50"
+            className="flex-1 min-w-[120px] rounded-full bg-maroon px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-maroon-hover focus-visible:outline focus-visible:ring-2 focus-visible:ring-maroon/50 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Agregar al carrito
+            {product.maxOrderQuantity < 1 ? "Agotado" : "Agregar al carrito"}
           </button>
           <Link
             href={`/catalogo/${product.slug}`}

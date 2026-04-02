@@ -93,12 +93,6 @@ function disclaimerHtml(): string {
   </p>`;
 }
 
-function siteLinkHtml(): string {
-  const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  if (!base) return "";
-  return `<p style="margin-top:12px;font-family:system-ui,sans-serif;font-size:13px"><a href="${escapeHtml(base)}" style="color:#7c2d3a">${escapeHtml(base)}</a></p>`;
-}
-
 function buildCustomerEmailHtml(params: {
   orderId: string;
   lines: OrderLineForEmail[];
@@ -125,7 +119,6 @@ function buildCustomerEmailHtml(params: {
     ${contactParagraphHtml()}
     ${buildShippingBlockHtml(params.shipping)}
     <p style="margin-top:24px;font-family:system-ui,sans-serif;font-size:14px;color:#333">Saludos,<br/><strong>${escapeHtml(brand)}</strong></p>
-    ${siteLinkHtml()}
     ${disclaimerHtml()}
   </div>
 </body></html>`;

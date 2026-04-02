@@ -8,9 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "node scripts/prisma-generate.cjs",
-    "db:push": "prisma db push",
-    "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:push": "dotenv -e .env -e .env.local -- prisma db push",
+    "db:seed": "dotenv -e .env -e .env.local -- prisma db seed",
+    "db:studio": "dotenv -e .env -e .env.local -- prisma studio",
+    "db:upsert-products": "dotenv -e .env -e .env.local -- tsx prisma/upsert-products.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -33,6 +34,7 @@
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.21",
     "cross-env": "^7.0.3",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "^15.3.3",
     "postcss": "^8.5.3",

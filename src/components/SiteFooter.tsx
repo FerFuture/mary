@@ -133,7 +133,7 @@ export function SiteFooter() {
       <div className="border-t border-border/80 py-4 text-center text-xs text-muted">
         <p>© {new Date().getFullYear()} {site}</p>
         <p className="mt-2">
-          Defensa de las y los consumidores: para reclamos ingresá{" "}
+          Defensa de las y los consumidores. Para reclamos ingresá{" "}
           <a
             href="https://autogestion.produccion.gob.ar/consumidores"
             target="_blank"
@@ -142,7 +142,7 @@ export function SiteFooter() {
           >
             acá
           </a>{" "}
-          y luego vas al portal.
+          .
         </p>
       </div>
     </footer>

@@ -38,7 +38,7 @@ export function WhatsAppFloatingButton() {
     <button
       type="button"
       aria-label="WhatsApp"
-      className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-maroon shadow-lg ring-1 ring-black/10 transition hover:scale-[1.03]"
+      className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-maroon shadow-lg transition hover:scale-[1.03] ring-2 ring-maroon/55 border-2 border-maroon/65"
       onClick={() => {
         // Por ahora no tenés el link configurado.
         // Esto evita navegar a un destino vacío y te avisa para luego setearlo.

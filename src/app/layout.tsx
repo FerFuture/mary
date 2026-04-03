@@ -4,6 +4,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { CartDrawer } from "@/components/CartDrawer";
+import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
 
 const raleway = Raleway({
   variable: "--font-raleway",
@@ -51,6 +52,7 @@ export default function RootLayout({
         <main className="flex-1">{children}</main>
         <SiteFooter />
         <CartDrawer />
+        <WhatsAppFloatingButton />
       </body>
     </html>
   );

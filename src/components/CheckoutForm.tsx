@@ -59,7 +59,6 @@ export function CheckoutForm() {
     // Idempotencia simple para evitar duplicados si el usuario reintenta.
     // Se envía al backend como clave.
     const requestId =
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : `req_${Date.now()}_${Math.random().toString(16).slice(2)}`;

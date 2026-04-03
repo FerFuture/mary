@@ -56,7 +56,9 @@ function migrateCartPersist(
       if (typeof row.maxQuantity === "number") return row as unknown as CartItem;
       const legacy = row.maxStock;
       if (typeof legacy === "number") {
-        const { maxStock: _m, ...rest } = row;
+        const { maxStock: legacyMax, ...rest } = row;
+        // Evita warnings por variable no usada.
+        void legacyMax;
         return { ...rest, maxQuantity: legacy } as CartItem;
       }
       return row as unknown as CartItem;

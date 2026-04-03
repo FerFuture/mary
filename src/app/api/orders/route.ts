@@ -131,7 +131,6 @@ export async function POST(request: Request) {
     shippingCity,
     shippingPostalCode,
     shippingState,
-    shippingCountry: _countryRaw,
     honeypot,
     idempotencyKey,
     items,

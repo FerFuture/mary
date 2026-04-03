@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-function WhatsAppIcon({ size = 22 }: { size?: number }) {
+function WhatsAppIcon({ size = 22, className }: { size?: number; className?: string }) {
   return (
     <svg
       width={size}
@@ -11,6 +11,7 @@ function WhatsAppIcon({ size = 22 }: { size?: number }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
+      className={className}
     >
       <path
         d="M20.52 3.48C19.05 2.02 17.03 1.2 14.9 1.2C10.55 1.2 7.03 4.73 7.03 9.06C7.03 10.47 7.42 11.86 8.16 13.08L7 21L15.07 19.74C16.33 20.52 17.76 20.94 19.24 20.94C23.57 20.94 27.1 17.41 27.1 13.08C27.1 10.97 26.28 8.94 24.82 7.47"
@@ -38,8 +39,8 @@ export function WhatsAppFloatingButton() {
     <button
       type="button"
       aria-label="WhatsApp"
-      // Sin ring/borde extra: evitamos el "doble aro" alrededor del botón.
-      className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-maroon shadow-lg transition hover:scale-[1.03]"
+      // El botón es transparente: evita el círculo bordó alrededor.
+      className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-transparent transition hover:scale-[1.03]"
       onClick={() => {
         // Por ahora no tenés el link configurado.
         // Esto evita navegar a un destino vacío y te avisa para luego setearlo.
@@ -49,7 +50,10 @@ export function WhatsAppFloatingButton() {
         setVisible(true);
       }}
     >
-      <WhatsAppIcon />
+      <WhatsAppIcon
+        size={30}
+        className="drop-shadow-[0_10px_14px_rgba(0,0,0,0.22)]"
+      />
     </button>
   );
 }

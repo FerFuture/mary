@@ -128,6 +128,79 @@ export function slugify(text: string): string {
   return t.slice(0, 72) || "producto";
 }
 
+/** Descripción por defecto si el Excel/CSV deja la celda vacía. */
+export function defaultProductDescription(
+  name: string,
+  category: Category,
+): string {
+  const n = name.trim();
+  const lower = n.toLowerCase();
+
+  const type =
+    category === "DIJE"
+      ? "dije"
+      : category === "COLLAR"
+        ? "cadena/collar"
+        : category === "PULSERA"
+          ? "pulsera"
+          : "anillo";
+
+  const material = (() => {
+    if (lower.includes("acero")) return "acero quirúrgico";
+    if (lower.includes("plata") || lower.includes("platead")) return "tono plateado";
+    if (lower.includes("dorado")) return "tono dorado";
+    return "";
+  })();
+
+  const motif = (() => {
+    const motifs = [
+      "colibrí",
+      "tortuga",
+      "serpiente",
+      "tulipán",
+      "nudo de bruja",
+      "luna",
+      "corazón",
+      "diamante",
+      "zapatilla",
+      "boca",
+      "river",
+      "strass",
+    ];
+    for (const m of motifs) {
+      if (lower.includes(m)) return m;
+    }
+    return "";
+  })();
+
+  const unit =
+    lower.includes("por unidad") || category === "DIJE"
+      ? "Se vende por unidad."
+      : "Ideal para uso diario o para regalar.";
+
+  const sentence1Parts = [
+    category === "DIJE" ? "Dije" : "Producto",
+    motif ? `de ${motif}` : "",
+    material ? `en ${material}` : "",
+    category === "COLLAR" && lower.includes("cadena") ? "tipo cadena" : "",
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const sentence1 =
+    sentence1Parts && sentence1Parts !== "Producto"
+      ? `${sentence1Parts}.`
+      : `${type.charAt(0).toUpperCase() + type.slice(1)} para complementar tus looks.`;
+
+  const sentence2 = material
+    ? `Acabado ${material === "acero quirúrgico" ? "resistente e hipoalergénico" : "delicado"}; combinable con otras piezas.`
+    : "Detalle delicado, fácil de combinar con otras piezas.";
+
+  return `${n}. ${sentence1} ${sentence2} ${unit}`.replace(/\s+/g, " ").trim();
+}
+
 export async function ensureUniqueProductSlug(
   prisma: PrismaClient,
   base: string,
@@ -179,7 +252,6 @@ export async function upsertProductFromCells(
     }
     slug = await ensureUniqueProductSlug(prisma, slugify(name));
   }
-  const description = cell(idx, cells, "description");
   const priceRaw = cell(idx, cells, "price");
   const imageUrlCell = cell(idx, cells, "imageurl");
   const categoryRaw = cell(idx, cells, "category");
@@ -196,6 +268,11 @@ export async function upsertProductFromCells(
     throw new Error(
       `Fila ${rowNum}: categoría "${categoryRaw}" no válida. Usá COLLAR, PULSERA, ANILLO o DIJE.`,
     );
+  }
+
+  let description = cell(idx, cells, "description").trim();
+  if (!description) {
+    description = defaultProductDescription(name, category);
   }
 
   const price = Number(priceRaw.trim().replace(",", "."));

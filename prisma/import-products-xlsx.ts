@@ -1,5 +1,7 @@
 /**
  * Importa productos desde Excel (.xlsx). Mismas columnas que el CSV.
+ * Slug vacío → se genera desde el nombre (único en la base).
+ * Descripción vacía → texto por defecto según nombre y categoría.
  *
  * Uso: npm run db:import-xlsx -- "productos_template.xlsx"
  * Por defecto busca ./productos_template.xlsx en la raíz del proyecto.

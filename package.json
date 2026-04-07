@@ -17,7 +17,9 @@
     "db:clear-products": "dotenv -e .env -e .env.local -- tsx prisma/clear-products.ts",
     "db:import-csv": "dotenv -e .env -e .env.local -- tsx prisma/import-products-csv.ts",
     "db:import-xlsx": "dotenv -e .env -e .env.local -- tsx prisma/import-products-xlsx.ts",
-    "db:seed-one-demo": "dotenv -e .env -e .env.local -- tsx prisma/seed-one-demo.ts"
+    "db:seed-one-demo": "dotenv -e .env -e .env.local -- tsx prisma/seed-one-demo.ts",
+    "db:patch-descriptions": "dotenv -e .env -e .env.local -- tsx prisma/patch-placeholder-descriptions.ts",
+    "db:fix-acero-colors": "dotenv -e .env -e .env.local -- tsx prisma/fix-acero-color-variants.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

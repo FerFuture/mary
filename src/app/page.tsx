@@ -1,16 +1,25 @@
 import Image from "next/image";
 import Link from "next/link";
+import { CollarPromoRotator } from "@/components/CollarPromoRotator";
 import { HeroProductShowcase } from "@/components/HeroProductShowcase";
 import { ProductCard } from "@/components/ProductCard";
-import { getFeaturedProducts, getHeroShowcaseProducts } from "@/lib/products";
+import { getFeaturedProducts, getHeroShowcaseProducts, getProducts } from "@/lib/products";
 
 const site = process.env.NEXT_PUBLIC_SITE_NAME ?? "Mary Mirari";
 
 export default async function Home() {
-  const [featured, heroShowcase] = await Promise.all([
+  const [featured, heroShowcase, collarProducts, ringProducts] = await Promise.all([
     getFeaturedProducts(8),
     getHeroShowcaseProducts(8),
+    getProducts({ category: "COLLAR" }),
+    getProducts({ category: "ANILLO" }),
   ]);
+  const collarImages = Array.from(
+    new Set(collarProducts.map((p) => p.imageUrl).filter(Boolean)),
+  ).slice(0, 8);
+  const ringImages = Array.from(
+    new Set(ringProducts.map((p) => p.imageUrl).filter(Boolean)),
+  ).slice(0, 8);
 
   return (
     <div>
@@ -60,13 +69,7 @@ export default async function Home() {
               </span>
             </div>
             <div className="pointer-events-none absolute bottom-0 right-0 top-0 w-1/2">
-              <Image
-                src="https://images.unsplash.com/photo-1599643478518-a784e5fb4fb8?w=400&q=80"
-                alt=""
-                fill
-                className="object-cover object-center opacity-90 transition duration-500 group-hover:scale-105"
-                sizes="200px"
-              />
+              <CollarPromoRotator images={collarImages} />
             </div>
           </Link>
           <Link
@@ -86,13 +89,7 @@ export default async function Home() {
               </span>
             </div>
             <div className="pointer-events-none absolute bottom-0 right-0 top-0 w-1/2">
-              <Image
-                src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&q=80"
-                alt=""
-                fill
-                className="object-cover object-center opacity-90 transition duration-500 group-hover:scale-105"
-                sizes="200px"
-              />
+              <CollarPromoRotator images={ringImages} />
             </div>
           </Link>
         </div>

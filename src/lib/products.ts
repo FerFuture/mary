@@ -9,19 +9,49 @@ import type { Category, ProductDTO } from "@/types/product";
 
 export type { ProductDTO, Category };
 
-function toDTO(p: Product): ProductDTO {
+function parseStringMap(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof v === "string" && v.trim()) out[k] = v.trim();
+  }
+  return out;
+}
+
+type ProductWithImages = Product & {
+  images?: { url: string; sortOrder: number }[];
+};
+
+function toDTO(p: ProductWithImages): ProductDTO {
+  const ordered = [...(p.images ?? [])].sort(
+    (a, b) => a.sortOrder - b.sortOrder,
+  );
+  const imageUrls =
+    ordered.length > 0
+      ? ordered.map((i) => i.url)
+      : p.imageUrl
+        ? [p.imageUrl]
+        : [];
+  const imageUrl = imageUrls[0] ?? p.imageUrl;
   return {
     id: p.id,
     slug: p.slug,
     name: p.name,
     description: p.description,
     price: decimalToNumber(p.price),
-    imageUrl: p.imageUrl,
+    imageUrl,
+    imageUrls,
     category: p.category as Category,
     featured: p.featured,
     maxOrderQuantity: p.stock,
+    colors: [...(p.colors ?? [])],
+    colorLabels: parseStringMap(p.colorLabels),
   };
 }
+
+const productImageInclude = {
+  images: { orderBy: { sortOrder: "asc" as const } },
+} as const;
 
 export type ProductFilters = {
   category?: DbCategory | null;
@@ -75,6 +105,7 @@ export async function getProducts(filters: ProductFilters): Promise<ProductDTO[]
   const rows = await prisma.product.findMany({
     where,
     orderBy: [{ featured: "desc" }, { name: "asc" }],
+    include: productImageInclude,
   });
   return rows.map(toDTO);
 }
@@ -87,6 +118,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDTO | null>
 
   const p = await prisma.product.findFirst({
     where: { slug, active: true },
+    include: productImageInclude,
   });
   return p ? toDTO(p) : null;
 }
@@ -101,6 +133,36 @@ export async function getFeaturedProducts(limit = 8): Promise<ProductDTO[]> {
     where: { active: true, featured: true, stock: { gt: 0 } },
     take: limit,
     orderBy: { name: "asc" },
+    include: productImageInclude,
   });
   return rows.map(toDTO);
+}
+
+function shuffleArray<T>(items: T[]): T[] {
+  const a = [...items];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j]!, a[i]!];
+  }
+  return a;
+}
+
+/**
+ * Productos activos con stock, mezclados al azar para el hero (cambia en cada carga).
+ * Toma un pool reciente amplio y baraja en memoria para escalar sin SQL específico.
+ */
+export async function getHeroShowcaseProducts(limit = 8): Promise<ProductDTO[]> {
+  const prisma = getPrisma();
+  if (!prisma || !(await hasActiveDbProducts())) {
+    const list = filterDemoProducts({});
+    return shuffleArray(list).slice(0, Math.min(limit, list.length));
+  }
+
+  const pool = await prisma.product.findMany({
+    where: { active: true, stock: { gt: 0 } },
+    take: Math.min(48, Math.max(limit * 6, 24)),
+    orderBy: { updatedAt: "desc" },
+    include: productImageInclude,
+  });
+  return shuffleArray(pool.map(toDTO)).slice(0, limit);
 }

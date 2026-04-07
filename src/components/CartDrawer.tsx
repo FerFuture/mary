@@ -69,7 +69,7 @@ export function CartDrawer() {
             <ul className="space-y-4">
               {items.map((line) => (
                 <li
-                  key={line.productId}
+                  key={`${line.productId}-${line.colorKey ?? ""}`}
                   className="flex gap-3 rounded-lg border border-border/80 bg-background/50 p-3 transition hover:border-maroon/20"
                 >
                   <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-cream-dark">
@@ -92,12 +92,19 @@ export function CartDrawer() {
                     <p className="text-sm text-muted">
                       {formatCurrency(line.unitPrice)} c/u
                     </p>
+                    {line.colorLabel ? (
+                      <p className="text-xs text-maroon">{line.colorLabel}</p>
+                    ) : null}
                     <div className="mt-2 flex items-center gap-2">
                       <button
                         type="button"
                         className="h-8 w-8 rounded border border-border text-lg leading-none transition hover:border-maroon/40"
                         onClick={() =>
-                          setQuantity(line.productId, line.quantity - 1)
+                          setQuantity(
+                            line.productId,
+                            line.quantity - 1,
+                            line.colorKey,
+                          )
                         }
                         aria-label="Menos"
                       >
@@ -110,7 +117,11 @@ export function CartDrawer() {
                         type="button"
                         className="h-8 w-8 rounded border border-border text-lg leading-none transition hover:border-maroon/40"
                         onClick={() =>
-                          setQuantity(line.productId, line.quantity + 1)
+                          setQuantity(
+                            line.productId,
+                            line.quantity + 1,
+                            line.colorKey,
+                          )
                         }
                         aria-label="Más"
                       >
@@ -119,7 +130,9 @@ export function CartDrawer() {
                       <button
                         type="button"
                         className="ml-auto text-xs text-maroon hover:underline"
-                        onClick={() => removeItem(line.productId)}
+                        onClick={() =>
+                          removeItem(line.productId, line.colorKey)
+                        }
                       >
                         Quitar
                       </button>

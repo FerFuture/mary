@@ -5,7 +5,7 @@ import { useCallback, useTransition } from "react";
 import { CATEGORY_LABELS } from "@/lib/categories";
 import type { Category } from "@/types/product";
 
-const categories: Category[] = ["COLLAR", "PULSERA", "ANILLO"];
+const categories: Category[] = ["COLLAR", "PULSERA", "ANILLO", "DIJE"];
 
 export function CatalogFilters() {
   const router = useRouter();

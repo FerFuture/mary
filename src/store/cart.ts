@@ -10,8 +10,11 @@ export type CartItem = {
   imageUrl: string;
   unitPrice: number;
   quantity: number;
-  /** Tope de unidades (no exponer como inventario en la UI). */
   maxQuantity?: number;
+  /** Clave de color (minúsculas); vacío si no aplica. */
+  colorKey: string;
+  /** Texto visible (ej. Dorado). */
+  colorLabel: string;
 };
 
 type CartState = {
@@ -25,9 +28,11 @@ type CartState = {
     unitPrice: number;
     quantity?: number;
     maxQuantity?: number;
+    colorKey?: string;
+    colorLabel?: string;
   }) => void;
-  removeItem: (productId: string) => void;
-  setQuantity: (productId: string, quantity: number) => void;
+  removeItem: (productId: string, colorKey?: string) => void;
+  setQuantity: (productId: string, quantity: number, colorKey?: string) => void;
   clear: () => void;
   openDrawer: () => void;
   closeDrawer: () => void;
@@ -45,25 +50,43 @@ function migrateCartPersist(
   const ps = persistedState as { items?: unknown };
   if (!Array.isArray(ps.items)) return empty;
 
-  if (version !== 0) {
-    return { items: ps.items as CartItem[] };
-  }
+  let rows = ps.items as unknown[];
 
-  return {
-    items: ps.items.map((raw) => {
-      if (!raw || typeof raw !== "object") return raw as CartItem;
+  if (version === 0) {
+    rows = rows.map((raw) => {
+      if (!raw || typeof raw !== "object") return raw;
       const row = raw as Record<string, unknown>;
-      if (typeof row.maxQuantity === "number") return row as unknown as CartItem;
+      if (typeof row.maxQuantity === "number") return row;
       const legacy = row.maxStock;
       if (typeof legacy === "number") {
         const { maxStock: legacyMax, ...rest } = row;
-        // Evita warnings por variable no usada.
         void legacyMax;
-        return { ...rest, maxQuantity: legacy } as CartItem;
+        return { ...rest, maxQuantity: legacy };
       }
-      return row as unknown as CartItem;
-    }),
-  };
+      return row;
+    });
+  }
+
+  const items: CartItem[] = rows.map((raw) => {
+    if (!raw || typeof raw !== "object") {
+      return raw as CartItem;
+    }
+    const row = raw as Record<string, unknown>;
+    return {
+      productId: String(row.productId ?? ""),
+      slug: String(row.slug ?? ""),
+      name: String(row.name ?? ""),
+      imageUrl: String(row.imageUrl ?? ""),
+      unitPrice: Number(row.unitPrice ?? 0),
+      quantity: Number(row.quantity ?? 0),
+      maxQuantity:
+        typeof row.maxQuantity === "number" ? row.maxQuantity : undefined,
+      colorKey: typeof row.colorKey === "string" ? row.colorKey : "",
+      colorLabel: typeof row.colorLabel === "string" ? row.colorLabel : "",
+    };
+  });
+
+  return { items };
 }
 
 export const useCartStore = create<CartState>()(
@@ -77,8 +100,14 @@ export const useCartStore = create<CartState>()(
           item.maxQuantity !== undefined
             ? Math.max(0, item.maxQuantity)
             : undefined;
+        const colorKey = item.colorKey ?? "";
+        const colorLabel = item.colorLabel ?? "";
         set((s) => {
-          const idx = s.items.findIndex((i) => i.productId === item.productId);
+          const idx = s.items.findIndex(
+            (i) =>
+              i.productId === item.productId &&
+              (i.colorKey ?? "") === colorKey,
+          );
           if (idx >= 0) {
             const next = [...s.items];
             const row = next[idx];
@@ -111,34 +140,55 @@ export const useCartStore = create<CartState>()(
                 unitPrice: item.unitPrice,
                 quantity: Math.max(1, initial),
                 maxQuantity: cap,
+                colorKey,
+                colorLabel,
               },
             ],
             drawerOpen: true,
           };
         });
       },
-      removeItem: (productId) =>
+      removeItem: (productId, colorKey = "") =>
         set((s) => ({
-          items: s.items.filter((i) => i.productId !== productId),
+          items: s.items.filter(
+            (i) =>
+              !(
+                i.productId === productId &&
+                (i.colorKey ?? "") === colorKey
+              ),
+          ),
         })),
-      setQuantity: (productId, quantity) => {
+      setQuantity: (productId, quantity, colorKey = "") => {
         if (quantity < 1) {
-          get().removeItem(productId);
+          get().removeItem(productId, colorKey);
           return;
         }
         set((s) => {
-          const i = s.items.find((x) => x.productId === productId);
+          const i = s.items.find(
+            (x) =>
+              x.productId === productId &&
+              (x.colorKey ?? "") === colorKey,
+          );
           if (!i) return s;
           const max = i.maxQuantity;
           const q = max !== undefined ? Math.min(quantity, max) : quantity;
           if (q < 1) {
             return {
-              items: s.items.filter((x) => x.productId !== productId),
+              items: s.items.filter(
+                (x) =>
+                  !(
+                    x.productId === productId &&
+                    (x.colorKey ?? "") === colorKey
+                  ),
+              ),
             };
           }
           return {
             items: s.items.map((x) =>
-              x.productId === productId ? { ...x, quantity: q } : x,
+              x.productId === productId &&
+              (x.colorKey ?? "") === colorKey
+                ? { ...x, quantity: q }
+                : x,
             ),
           };
         });
@@ -150,7 +200,7 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "mary-mirari-cart",
-      version: 1,
+      version: 2,
       migrate: migrateCartPersist,
       partialize: (state) => ({ items: state.items }),
     },

@@ -80,6 +80,9 @@ export function CheckoutForm() {
           items: items.map((i) => ({
             productId: i.productId,
             quantity: i.quantity,
+            ...(i.colorKey
+              ? { colorKey: i.colorKey, colorLabel: i.colorLabel }
+              : {}),
           })),
         }),
       });
@@ -153,7 +156,7 @@ export function CheckoutForm() {
         <ul className="mt-4 space-y-4">
           {items.map((line) => (
             <li
-              key={line.productId}
+              key={`${line.productId}-${line.colorKey ?? ""}`}
               className="flex gap-4 rounded-xl border border-border bg-card p-4"
             >
               <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-cream-dark">
@@ -172,6 +175,11 @@ export function CheckoutForm() {
                 >
                   {line.name}
                 </Link>
+                {line.colorLabel ? (
+                  <p className="text-xs font-medium uppercase tracking-wide text-maroon">
+                    Color: {line.colorLabel}
+                  </p>
+                ) : null}
                 <p className="text-sm text-muted">
                   {formatCurrency(line.unitPrice)} × {line.quantity}
                 </p>
@@ -180,7 +188,11 @@ export function CheckoutForm() {
                     type="button"
                     className="h-8 w-8 rounded border border-border"
                     onClick={() =>
-                      setQuantity(line.productId, line.quantity - 1)
+                      setQuantity(
+                        line.productId,
+                        line.quantity - 1,
+                        line.colorKey,
+                      )
                     }
                     aria-label="Menos"
                   >
@@ -191,7 +203,11 @@ export function CheckoutForm() {
                     type="button"
                     className="h-8 w-8 rounded border border-border"
                     onClick={() =>
-                      setQuantity(line.productId, line.quantity + 1)
+                      setQuantity(
+                        line.productId,
+                        line.quantity + 1,
+                        line.colorKey,
+                      )
                     }
                     aria-label="Más"
                   >
@@ -200,7 +216,9 @@ export function CheckoutForm() {
                   <button
                     type="button"
                     className="ml-auto text-sm text-maroon hover:underline"
-                    onClick={() => removeItem(line.productId)}
+                    onClick={() =>
+                      removeItem(line.productId, line.colorKey)
+                    }
                   >
                     Eliminar
                   </button>
@@ -219,16 +237,17 @@ export function CheckoutForm() {
             coordinamos por WhatsApp según tu zona. Sin pago online.
           </p>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            {/* Honeypot anti-bots: bots suelen rellenarlo aunque esté oculto.
-                Debe quedar vacío, el backend lo valida. */}
+            {/* Honeypot: fuera de vista pero en el árbol y enfocable (p. ej. pruebas E2E).
+                Debe quedar vacío; el backend rechaza si tiene contenido. */}
             <input
+              id="checkout-honeypot"
+              name="honeypot"
               type="text"
-              name="company"
               value={honeypot}
               onChange={(e) => setHoneypot(e.target.value)}
-              tabIndex={-1}
               autoComplete="off"
-              style={{ display: "none" }}
+              aria-label="Campo anti-spam, dejá vacío"
+              className="sr-only"
             />
             <div>
               <label

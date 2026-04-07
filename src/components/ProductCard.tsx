@@ -38,24 +38,35 @@ export function ProductCard({ product }: Props) {
           {formatCurrency(product.price)}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={product.maxOrderQuantity < 1}
-            onClick={() =>
-              addItem({
-                productId: product.id,
-                slug: product.slug,
-                name: product.name,
-                imageUrl: product.imageUrl,
-                unitPrice: product.price,
-                quantity: 1,
-                maxQuantity: product.maxOrderQuantity,
-              })
-            }
-            className="flex-1 min-w-[120px] rounded-full bg-maroon px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-maroon-hover focus-visible:outline focus-visible:ring-2 focus-visible:ring-maroon/50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {product.maxOrderQuantity < 1 ? "Agotado" : "Agregar al carrito"}
-          </button>
+          {product.colors.length > 0 ? (
+            <Link
+              href={`/catalogo/${product.slug}`}
+              className="flex-1 min-w-[120px] rounded-full border-2 border-maroon bg-transparent px-4 py-2.5 text-center text-sm font-semibold text-maroon transition hover:bg-maroon/10"
+            >
+              Elegí color
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled={product.maxOrderQuantity < 1}
+              onClick={() =>
+                addItem({
+                  productId: product.id,
+                  slug: product.slug,
+                  name: product.name,
+                  imageUrl: product.imageUrl,
+                  unitPrice: product.price,
+                  quantity: 1,
+                  maxQuantity: product.maxOrderQuantity,
+                  colorKey: "",
+                  colorLabel: "",
+                })
+              }
+              className="flex-1 min-w-[120px] rounded-full bg-maroon px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-maroon-hover focus-visible:outline focus-visible:ring-2 focus-visible:ring-maroon/50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {product.maxOrderQuantity < 1 ? "Agotado" : "Agregar al carrito"}
+            </button>
+          )}
           <Link
             href={`/catalogo/${product.slug}`}
             className="rounded-full border border-border px-4 py-2.5 text-center text-sm font-medium transition hover:border-maroon/40 hover:text-maroon"

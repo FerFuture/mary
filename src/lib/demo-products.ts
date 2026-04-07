@@ -207,9 +207,12 @@ export const DEMO_PRODUCT_DTOS: ProductDTO[] = DEMO_PRODUCT_SEEDS.map((p) => ({
   description: p.description,
   price: p.price,
   imageUrl: p.imageUrl,
+  imageUrls: [p.imageUrl],
   category: p.category,
   featured: p.featured,
   maxOrderQuantity: p.stock ?? DEMO_DEFAULT_STOCK,
+  colors: [],
+  colorLabels: {},
 }));
 
 const demoById = new Map(DEMO_PRODUCT_DTOS.map((p) => [p.id, p] as const));

@@ -90,6 +90,8 @@ const bodySchema = z.object({
       z.object({
         productId: z.string().min(1).max(120),
         quantity: z.number().int().positive().max(50),
+        colorKey: z.string().trim().min(1).max(40).optional(),
+        colorLabel: z.string().trim().min(1).max(80).optional(),
       }),
     )
     .min(1)
@@ -187,11 +189,32 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
+      const ck = line.colorKey?.trim() ?? "";
+      const cl = line.colorLabel?.trim() ?? "";
+      if (p.colors.length > 0) {
+        if (!ck || !p.colors.includes(ck)) {
+          return NextResponse.json(
+            {
+              error: "Elegí un color válido para este producto.",
+              productId: line.productId,
+            },
+            { status: 400 },
+          );
+        }
+      } else if (ck) {
+        return NextResponse.json(
+          {
+            error: "Este producto no tiene variantes de color.",
+            productId: line.productId,
+          },
+          { status: 400 },
+        );
+      }
       resolvedDemo.push({
         productId: p.id,
         quantity: line.quantity,
         unitPrice: p.price,
-        name: p.name,
+        name: cl ? `${p.name} (${cl})` : p.name,
       });
     }
 
@@ -250,6 +273,29 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+    const p = byId.get(line.productId)!;
+    const ck = line.colorKey?.trim() ?? "";
+    const cl = line.colorLabel?.trim() ?? "";
+    if (p.colors.length > 0) {
+      if (!ck || !p.colors.includes(ck)) {
+        return NextResponse.json(
+          {
+            error: "Elegí un color válido para este producto.",
+            productId: line.productId,
+          },
+          { status: 400 },
+        );
+      }
+    } else if (ck) {
+      return NextResponse.json(
+        {
+          error: "Este producto no tiene variantes de color.",
+          productId: line.productId,
+        },
+        { status: 400 },
+      );
+    }
+    void cl;
   }
 
   const aggregatedDb = aggregateItemQuantities(items);
@@ -290,8 +336,12 @@ export async function POST(request: Request) {
 
       const lines = existing.items.map((it) => {
         const unit = decimalToNumber(it.unitPrice);
+        const base = nameById.get(it.productId) ?? "Producto";
+        const name = it.colorLabel
+          ? `${base} (${it.colorLabel})`
+          : base;
         return {
-          name: nameById.get(it.productId) ?? "Producto",
+          name,
           quantity: it.quantity,
           unitPrice: unit,
           lineTotal: unit * it.quantity,
@@ -312,17 +362,23 @@ export async function POST(request: Request) {
     quantity: number;
     unitPrice: number;
     name: string;
+    colorKey: string | null;
+    colorLabel: string | null;
   }> = [];
 
   for (const line of items) {
     const p = byId.get(line.productId)!;
     const unit = decimalToNumber(p.price);
+    const ck = line.colorKey?.trim() ?? "";
+    const cl = line.colorLabel?.trim() ?? "";
     productsTotal += unit * line.quantity;
     resolvedLines.push({
       productId: p.id,
       quantity: line.quantity,
       unitPrice: unit,
-      name: p.name,
+      name: cl ? `${p.name} (${cl})` : p.name,
+      colorKey: ck || null,
+      colorLabel: cl || null,
     });
   }
 
@@ -371,6 +427,8 @@ export async function POST(request: Request) {
             productId: line.productId,
             quantity: line.quantity,
             unitPrice: line.unitPrice,
+            colorKey: line.colorKey,
+            colorLabel: line.colorLabel,
           },
         });
       }
@@ -403,8 +461,12 @@ export async function POST(request: Request) {
 
         const lines = existing.items.map((it) => {
           const unit = decimalToNumber(it.unitPrice);
+          const base = nameById.get(it.productId) ?? "Producto";
+          const name = it.colorLabel
+            ? `${base} (${it.colorLabel})`
+            : base;
           return {
-            name: nameById.get(it.productId) ?? "Producto",
+            name,
             quantity: it.quantity,
             unitPrice: unit,
             lineTotal: unit * it.quantity,

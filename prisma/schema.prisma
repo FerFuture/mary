@@ -12,6 +12,7 @@ enum Category {
   COLLAR
   PULSERA
   ANILLO
+  DIJE
 }
 
 model Product {
@@ -25,9 +26,24 @@ model Product {
   featured    Boolean  @default(false)
   active      Boolean  @default(true)
   stock       Int      @default(20)
+  /** Claves en minúsculas, ej. dorado, plateado (sin espacios). */
+  colors      String[] @default([])
+  /** JSON: { "dorado": "Dorado", "plateado": "Plateado" } — opcional. */
+  colorLabels Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   orderItems  OrderItem[]
+  images      ProductImage[]
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int     @default(0)
+
+  @@index([productId])
 }
 
 model Order {
@@ -45,11 +61,13 @@ model Order {
 }
 
 model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  quantity  Int
-  unitPrice Decimal
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  quantity   Int
+  unitPrice  Decimal
+  colorKey   String?
+  colorLabel String?
 }

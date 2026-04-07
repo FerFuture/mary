@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+# TestSprite MCP (reportes y temporales generados al correr tests)
+/testsprite_tests/
 
 # next.js
 /.next/

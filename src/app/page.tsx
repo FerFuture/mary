@@ -1,12 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
+import { HeroProductShowcase } from "@/components/HeroProductShowcase";
 import { ProductCard } from "@/components/ProductCard";
-import { getFeaturedProducts } from "@/lib/products";
+import { getFeaturedProducts, getHeroShowcaseProducts } from "@/lib/products";
 
 const site = process.env.NEXT_PUBLIC_SITE_NAME ?? "Mary Mirari";
 
 export default async function Home() {
-  const featured = await getFeaturedProducts(8);
+  const [featured, heroShowcase] = await Promise.all([
+    getFeaturedProducts(8),
+    getHeroShowcaseProducts(8),
+  ]);
 
   return (
     <div>
@@ -29,15 +33,7 @@ export default async function Home() {
             </Link>
           </div>
           <div className="relative order-1 aspect-[4/5] max-h-[420px] animate-fade-up animate-delay-1 sm:order-2 sm:max-h-none sm:min-h-[360px]">
-            <div className="absolute inset-0 rounded-2xl bg-cream-dark/80 shadow-inner" />
-            <Image
-              src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=900&q=80"
-              alt="Gato"
-              fill
-              className="rounded-2xl object-cover opacity-95"
-              sizes="(max-width:640px) 100vw, 50vw"
-              priority
-            />
+            <HeroProductShowcase products={heroShowcase} />
           </div>
         </div>
       </section>
